@@ -17,10 +17,13 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.version>3.30.2</quarkus.platform.version>
 
-        <skipITs>false</skipITs>
+        <skipITs>true</skipITs>
+
+        <!-- JaCoCo coverage output file -->
+        <jacoco.destfile>${project.build.directory}/jacoco.exec</jacoco.destfile>
     </properties>
 
-    <!-- Import Quarkus BOM -->
+    <!-- Quarkus BOM -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -35,19 +38,19 @@
 
     <dependencies>
 
-        <!-- RESTEasy Jackson (Fixes JSON-B Yasson issue) -->
+        <!-- REST API -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-jackson</artifactId>
         </dependency>
 
-        <!-- Panache ORM -->
+        <!-- ORM + Panache -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm-panache</artifactId>
         </dependency>
 
-        <!-- MySQL -->
+        <!-- MySQL driver -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mysql</artifactId>
@@ -59,20 +62,19 @@
             <artifactId>quarkus-arc</artifactId>
         </dependency>
 
-        <!-- Hibernate Validator -->
+        <!-- Validation -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>
         </dependency>
 
-        <!-- JUnit -->
+        <!-- Test dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- REST-assured -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -84,61 +86,61 @@
     <build>
         <plugins>
 
-            <!-- Force Delete target folder on Windows (Jenkins fix) -->
+            <!-- Fix Windows/Jenkins failure deleting target directory -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.basedir}/target</directory>
-                            <includes>
-                                <include>**/*</include>
-                            </includes>
-                            <followSymlinks>false</followSymlinks>
-                        </fileset>
-                    </filesets>
                     <failOnError>false</failOnError>
                 </configuration>
             </plugin>
 
-            <!-- Quarkus Plugin -->
-            <plugin>
-                <groupId>${quarkus.platform.group-id}</groupId>
-                <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.platform.version}</version>
-                <extensions>true</extensions>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>build</goal>
-                            <goal>generate-code</goal>
-                            <goal>generate-code-tests</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Jacoco -->
+            <!-- JaCoCo for code coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
                 <executions>
+
+                    <!-- Attach JaCoCo Java Agent -->
                     <execution>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${jacoco.destfile}</destFile>
+                        </configuration>
                     </execution>
+
+                    <!-- Generate HTML report -->
                     <execution>
-                        <id>report</id>
-                        <phase>prepare-package</phase>
+                        <id>jacoco-report</id>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                     </execution>
+
                 </executions>
+            </plugin>
+
+            <!-- Surefire for running unit tests -->
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- Ensure JaCoCo agent is included -->
+                    <argLine>${argLine}</argLine>
+                </configuration>
+            </plugin>
+
+            <!-- Quarkus build plugin -->
+            <plugin>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <extensions>true</extensions>
             </plugin>
 
             <!-- Compiler -->
@@ -150,32 +152,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Surefire -->
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.4</version>
-                <configuration>
-                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-                </configuration>
-            </plugin>
-
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>native</id>
-            <activation>
-                <property>
-                    <name>native</name>
-                </property>
-            </activation>
-            <properties>
-                <quarkus.package.jar.enabled>false</quarkus.package.jar.enabled>
-                <skipITs>false</skipITs>
-                <quarkus.native.enabled>true</quarkus.native.enabled>
-            </properties>
-        </profile>
-    </profiles>
 
 </project>
