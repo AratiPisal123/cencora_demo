@@ -1,4 +1,4 @@
 FROM eclipse-temurin:21
 WORKDIR /app
-COPY target/quarkus-app/ /app/
-CMD ["java", "-jar", "/app/quarkus-run.jar"]
+COPY target/*-runner.jar /app/app.jar
+CMD ["java", "-jar", "/app/app.jar"]
